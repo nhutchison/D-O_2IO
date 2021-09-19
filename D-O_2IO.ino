@@ -63,12 +63,12 @@ void lss_tx_enable(bool en)
 void lss_transmit(String s) {
   // The handler may update the packet for reply transmission
   // if so indicated, print the packet back to master
-  lss_tx_enable(true);
+  //lss_tx_enable(true);
   Serial.print('*');
   Serial.print(s);
   Serial.print('\r');
   Serial.flush();
-  lss_tx_enable(false);
+  //lss_tx_enable(false);
 }
 
 void setup() {
@@ -77,8 +77,8 @@ void setup() {
 
   #ifndef DEBUG
   // configure the TX enable tr-state buffer
-  pinMode (hw_pin_lss_tx_enable, OUTPUT);
-  lss_tx_enable(false);
+  //pinMode (hw_pin_lss_tx_enable, OUTPUT);
+  //lss_tx_enable(false);
 
   // disable USB tx input line so we only receive LSS bus serial data
   pinMode (hw_pin_usb_tx_enable, OUTPUT);
@@ -172,44 +172,42 @@ void moveDyna(unsigned char ID, int Position)
     packet[7] = Position_H;
     packet[8] = Checksum;
 
-    lss_tx_enable(true);
+    dynaSerial.write(packet, length);
 
-    //return (sendAXPacket(packet, length));
-    dynaSerial.write(packet, 9);
+}
 
-    lss_tx_enable(false);
+// Set the servo ID.  Valid values between 0 and 253??
+// We only need ID 2/3 in D-O
+// Used as part of the setup code
+void setDynaID(unsigned char ID, unsigned char newID)
+{
+    const unsigned int length = 8;
+    unsigned char packet[length];
+
+    //Checksum = (~(ID + AX_ID_LENGTH + AX_WRITE_DATA + AX_ID + newID)) & 0xFF;
+    Checksum = (~(ID + 4 + 3 + 3 + newID)) & 0xFF;
+
+    packet[0] = 255;
+    packet[1] = 255;
+    packet[2] = ID;
+    packet[3] = 4;
+    packet[4] = 3;
+    packet[5] = 3;
+    packet[6] = newID;
+    packet[7] = Checksum;
+
+    dynaSerial.write(packet, length);
 
 }
 
 // Mega simple test loop.
 void loop() {
 
-  unsigned long now = millis();
-
-  if (now >= test_time)
-  {
-    test_time = now + 1000;
-
-    if (flip)
-    {
-      servo_pulse = 10;
-      dyna_pos = 205;  // -90
-      //Serial.println("1000");
-    }
-    else
-    {
-      servo_pulse = 180;
-      dyna_pos = 819;  // 90
-      //Serial.println("2000");
-    }
-    flip = !flip;
-
-    //serv1.writeMicroseconds(servo_pulse);
-    //serv1.write(servo_pulse);
-    //moveDyna(TURN_SERVO, dyna_pos);
-    //moveDyna(TILT_SERVO, dyna_pos);
-    
-  }
+  // Don't actually do anything in the main loop.
+  // The Serial command parser does actual work
+  // When a valid command is received.
+  
+  // Test code can be added here if needed.
 
    
 }
@@ -358,6 +356,9 @@ void parseCommand(char* inputStr)
     case 'M':                           // A command does the same as D command, so just fall though.
       moveServo(address, argument);
       break;
+    case 'S':
+      // This is a setup command ... it will do config stuff
+      setDynaID(address, argument);
     default:
       goto beep;                        // unknown command
       break;
