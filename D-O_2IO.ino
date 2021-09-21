@@ -15,10 +15,15 @@
 #define HEAD_TURN_ID 2
 #define HEAD_TILT_ID 3
 
+#define SID_TL A3
+#define SID_TR A4
+#define SID_BT A5
+
 #define ANT_TL 4 // Top left antenna
 #define ANT_TR 5 // Top right antenna
 #define ANT_BT 6 // Bottom antenna
 #define ANT_ALL 7 // All antenna
+#define ANT_TOP 8 // Top two antenna
 
 
 // the hardware pins of the LSS Software Serial port
@@ -98,9 +103,9 @@ void setup() {
   dynaSerial.begin(115200);
 
   // Attach the servos on the pins above:
-  servTL.attach(A3);  // Top Left
-  servTR.attach(A4);  // Top Right
-  servBT.attach(A5);  // Bottom
+  servTL.attach(SID_TL);  // Top Left
+  servTR.attach(SID_TR);  // Top Right
+  servBT.attach(SID_BT);  // Bottom
 
   servTL.writeMicroseconds(1500); // Center the Servo
   servTR.writeMicroseconds(1500); // Center the Servo
@@ -395,26 +400,47 @@ void moveServo(int ID, int pos)
     }
     #endif
   }
-  else if ((ID == ANT_TL) || (ID == ANT_TR) || (ID == ANT_BT) || (ID == ANT_ALL)){
+  else if ((ID == ANT_TL) || (ID == ANT_TR) || (ID == ANT_BT) || (ID == ANT_ALL) || (ID == ANT_TOP)){
     // Check for a valid position argument.
     if (pos >=1000 && pos <= 2000)
     {  
       switch(ID)
       {
         case ANT_TL:
+          servTL.attach(SID_TL);
           servTL.writeMicroseconds(pos);
+          servTL.detach();
           break;
         case ANT_TR:
+          servTR.attach(SID_TR);
           servTR.writeMicroseconds(pos);
+          servTR.detach();
           break;
         case ANT_BT:
+          servBT.attach(SID_BT);
           servBT.writeMicroseconds(pos);
+          servBT.detach();
           break;
         case ANT_ALL:
-          //  All 3 do the same thing.  (This is a fast way to move all with one command.
+          //  All 3 do the same thing.  (This is a fast way to move all with one command)
+          servTL.attach(SID_TL);
+          servTR.attach(SID_TR);
+          servBT.attach(SID_BT);
           servTL.writeMicroseconds(pos);
           servTR.writeMicroseconds(pos);
           servBT.writeMicroseconds(pos);
+          servTL.detach();
+          servTR.detach();
+          servBT.detach();
+          break;
+        case ANT_TOP:
+          //  Top two do the same thing.  (This is a fast way to move top two with one command)
+          servTL.attach(SID_TL);
+          servTR.attach(SID_TR);
+          servTL.writeMicroseconds(pos);
+          servTR.writeMicroseconds(pos);
+          servTL.detach();
+          servTR.detach();
           break;
       }
     }
